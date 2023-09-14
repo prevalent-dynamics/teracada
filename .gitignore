@@ -1,0 +1,21 @@
+# Main .gitignore
+
+# Ignore all cmake build files and directories
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/CMakeFiles
+**/Makefile
+**/install_manifest.txt
+
+# Ignore all the shared/static/executable objects
+**/*.a
+**/*.o
+**/*.so
+**/*.out
+**/*.exe
+**/artifacts/*
+
+# All other miscellaneous files
+# Ignore contrib directory for now
+contrib
+.DS_Store
