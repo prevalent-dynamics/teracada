@@ -4,7 +4,8 @@
 #include "teracada_error.h"
 
 
-tc_char* TeracadaArray::getErrStr ( tc_int iErrno ) {
+template <typename tDataType>
+tc_char* TeracadaArray<tDataType>::getErrStr ( tc_int iErrno ) {
   if ( ! iErrno )
     iErrno = getErrno();
 
@@ -23,8 +24,8 @@ tc_char* TeracadaArray::getErrStr ( tc_int iErrno ) {
       snprintf(pcTERACADA_ERRSTR, TC_ERRORSTR_LENGTH, "%s", ERRSTR_TA_INIT_FAILED);
       break;
 
-    case ERR_TA_INVALID_POS:
-      snprintf(pcTERACADA_ERRSTR, TC_ERRORSTR_LENGTH, "%s", ERRSTR_TA_INVALID_POS);
+    case ERR_TA_INVALID_POSITION_OR_INDEX:
+      snprintf(pcTERACADA_ERRSTR, TC_ERRORSTR_LENGTH, "%s", ERRSTR_TA_INVALID_POSITION_OR_INDEX);
       break;
 
     default:
@@ -37,4 +38,20 @@ tc_char* TeracadaArray::getErrStr ( tc_int iErrno ) {
 
   ERREXIT:
     return NULL;
+}
+
+// We don't overwrite previously set error
+template <typename tDataType>
+tc_void TeracadaArray<tDataType>::throwException ( tc_int iErrno ) {
+  // Error numbers are negative
+  if ( ! (iErrno <= TC_ERRNO_START && iErrno >= TC_ERRNO_END) )
+    setErrno(ERR_TA_RUNTIME);
+  else
+    setErrno(iErrno);
+
+  // Use getErrno() and getErrStr() so that we don't overwrite previous set error
+  if ( isExceptionsEnabled() )
+    throw TeracadaException(getErrno(), getErrStr());
+
+  return;
 }

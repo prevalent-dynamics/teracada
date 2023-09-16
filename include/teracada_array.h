@@ -16,7 +16,7 @@ enum {
 
 #define TA_REALLOC_ATTEMPTS_DUMP_FPATH     "/dev/shm/teracada_realloc_attempts"
 
-
+template <typename tDataType>
 class TeracadaArray {
   private:
     // Teracada array data type
@@ -24,7 +24,7 @@ class TeracadaArray {
     tc_byte           m_b8DataTypeSize;
 
     // Main array pointers
-    void*             m_pvArray;
+    tc_void*          m_pvArray;
 
     // If Teracada array has been successfully initialized
     tc_bool           m_iIsInitSuccess;
@@ -47,6 +47,7 @@ class TeracadaArray {
 
     // Value 0 represents no error
     tc_int            m_iErrno;
+    tc_bool           m_bEnableExceptions;
 
 
   protected:
@@ -58,15 +59,15 @@ class TeracadaArray {
       return ( m_b8DataTypeSize = b8ArrayElementSize );
     }
 
-    void* setArray ( void* pvArrayAllocMemBlock) {
+    tc_void* setArray ( tc_void* pvArrayAllocMemBlock) {
       return (m_pvArray = pvArrayAllocMemBlock);
     }
 
-    void setArrayInitSuccess () {
+    tc_void setArrayInitSuccess () {
       m_iIsInitSuccess = true;
     }
 
-    void setArrayInitFailure () {
+    tc_void setArrayInitFailure () {
       m_iIsInitSuccess = false;
     }
 
@@ -74,11 +75,14 @@ class TeracadaArray {
       return (m_iMaxNumArrayElements = iMaxNumElements);
     }
 
-    void incrementTotalReallocAttempts ( void ) {
+    tc_void incrementTotalReallocAttempts ( void ) {
       m_uliTotalReallocAttempts ++;
     }
 
-    template <typename tDataType>
+    tc_bool setDataType ( tc_byte b8DataType );
+
+    tc_bool setDataType ( void );
+
     tc_bool validateTypeSafety ( void );
 
     tc_int positionToIndex ( tc_int iPosition );
@@ -86,21 +90,26 @@ class TeracadaArray {
     tc_bool resize ( tc_int iNumElements = 0 );
     tc_int resizeIfRequired ( tc_int iInsertIndex, tc_int uiNumElements, tc_bool overwrite);
 
-    template <typename tDataType>
     tc_bool _remove ( tc_int iPosition, tc_int uiNumElements );
 
 
   public:
-    TeracadaArray ( tc_byte b8DataType, tc_int iNumElements = 100 );
+
+    TeracadaArray ( tc_int iNumElements = 100 );
+
     ~TeracadaArray();
 
     tc_byte getDataType ( void ) const {
       return m_b8DataType;
     }
 
-    void* getArray ( void ) const {
+    tc_void* getArray ( void ) const {
       return m_pvArray;
     }
+
+    tc_bool isInitSuccess ( void ) const {
+      return m_iIsInitSuccess;
+    };
 
     tc_int getLastElementIndex ( void ) const {
       return m_iArrayLastIndex;
@@ -122,7 +131,7 @@ class TeracadaArray {
       return m_iArrayLastIndex + 1;
     }
 
-    void setNumElements ( tc_int iArrayElements ) {
+    tc_void setNumElements ( tc_int iArrayElements ) {
       if ( iArrayElements <= m_iMaxNumArrayElements ) {
         m_iArrayLastIndex = iArrayElements - 1;
       }
@@ -164,157 +173,158 @@ class TeracadaArray {
       return m_iErrno;
     }
 
-    tc_int setErrno ( tc_int iErrno ) {
-      return (m_iErrno = iErrno);
+    tc_void setErrno ( tc_int iErrno ) {
+      // Don't overwrite error number
+      if ( ! getErrno() )
+        m_iErrno = iErrno;
     }
 
-    tc_bool isInitSuccess ( void ) const {
-      return m_iIsInitSuccess;
-    };
+    tc_void enableExceptions ( void ) {
+      m_bEnableExceptions = true;
+    }
+
+    tc_void disableExceptions ( void ) {
+      m_bEnableExceptions = false;
+    }
+
+    tc_bool isExceptionsEnabled ( void ) const {
+      return m_bEnableExceptions;
+    }
 
     tc_int indexToPosition ( tc_int iIndex ) const {
       return iIndex + 1;
     }
 
-    template <typename tDataType>
     tc_bool insert ( tDataType tValue, tc_int iPosition = 0, tc_bool bOverwrite = false );
 
-    template <typename tDataType>
-    tc_bool insert ( const tDataType* tValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
-
-    // tc_bool insert ( const tc_char* pcVal, tc_int iPosition, tc_int uiMaxLenVal, ... );
+    tc_bool insert ( tDataType* tValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
 
     tc_bool remove ( tc_int iPosition = 0, tc_int uiNumElements = 1 );
 
-    void reset ( void );
+    tc_bool reset ( void );
 
-    void* get ( tc_int iPosition = 1 );
+    tc_void* get ( tc_int iPosition = 1 );
 
-    void print ( void );
+    tc_void print ( void );
 
-    TeracadaArray* printToBuff ( TeracadaArray *ptcaBuff = nullptr );
+    TeracadaArray<tc_char>* printToBuff ( TeracadaArray<tc_char>* ptcaBuff = nullptr );
 
 
     /* Function declarations for teracada_error.cc */
 
-    tc_char* getErrStr ( tc_int iErrno = 0 );
+    tc_str getErrStr ( tc_int iErrno = 0 );
+    tc_void throwException ( tc_int iErrno = 0 );
 
 
     /* Function declarations for (teracada_stats.cc) */
 
-    template <typename tDataType>
-    tDataType _min ( TeracadaArray *tcaMinValPositions = nullptr );
+    // tDataType _min ( TeracadaArray *tcaMinValPositions = nullptr );
 
-    inline tc_decimal min ( TeracadaArray *tcaMinValPositions = nullptr ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _min<tc_byte>(tcaMinValPositions);
+    // inline tc_decimal min ( TeracadaArray *tcaMinValPositions = nullptr ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _min<tc_byte>(tcaMinValPositions);
 
-        case TC_INT:
-          return _min<tc_int>(tcaMinValPositions);
+    //     case TC_INT:
+    //       return _min<tc_int>(tcaMinValPositions);
 
-        case TC_DECIMAL:
-          return _min<tc_decimal>(tcaMinValPositions);
+    //     case TC_DECIMAL:
+    //       return _min<tc_decimal>(tcaMinValPositions);
 
-        default:
-          return 0;
-      }
-    }
+    //     default:
+    //       return 0;
+    //   }
+    // }
 
-    template <typename tDataType>
-    tDataType _max ( TeracadaArray *tcaMinValPositions = nullptr );
+    // tDataType _max ( TeracadaArray *tcaMinValPositions = nullptr );
 
-    inline tc_decimal max ( TeracadaArray *tcaMaxValPositions = nullptr ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _max<tc_byte>(tcaMaxValPositions);
+    // inline tc_decimal max ( TeracadaArray *tcaMaxValPositions = nullptr ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _max<tc_byte>(tcaMaxValPositions);
 
-        case TC_INT:
-          return _max<tc_int>(tcaMaxValPositions);
+    //     case TC_INT:
+    //       return _max<tc_int>(tcaMaxValPositions);
 
-        case TC_DECIMAL:
-          return _max<tc_decimal>(tcaMaxValPositions);
+    //     case TC_DECIMAL:
+    //       return _max<tc_decimal>(tcaMaxValPositions);
 
-        default:
-          return 0;
-      }
-    }
+    //     default:
+    //       return 0;
+    //   }
+    // }
 
-    template <typename tDataType>
-    tc_decimal _mean ( void );
+    // tc_decimal _mean ( void );
 
-    inline tc_decimal mean ( void ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _mean<tc_byte>();
+    // inline tc_decimal mean ( void ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _mean<tc_byte>();
 
-        case TC_INT:
-          return _mean<tc_int>();
+    //     case TC_INT:
+    //       return _mean<tc_int>();
 
-        case TC_DECIMAL:
-          return _mean<tc_decimal>();
+    //     case TC_DECIMAL:
+    //       return _mean<tc_decimal>();
 
-        default:
-          return 0;
-      }
-    }
+    //     default:
+    //       return 0;
+    //   }
+    // }
 
-    template < typename tDataType >
-    tc_decimal _variance ( tc_int iDeltaDOF = 0 );
+    // tc_decimal _variance ( tc_int iDeltaDOF = 0 );
 
-    inline tc_decimal variance ( tc_int iDeltaDOF = 0 ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _variance<tc_byte>(iDeltaDOF);
+    // inline tc_decimal variance ( tc_int iDeltaDOF = 0 ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _variance<tc_byte>(iDeltaDOF);
 
-        case TC_INT:
-          return _variance<tc_int>(iDeltaDOF);
+    //     case TC_INT:
+    //       return _variance<tc_int>(iDeltaDOF);
 
-        case TC_DECIMAL:
-          return _variance<tc_decimal>(iDeltaDOF);
+    //     case TC_DECIMAL:
+    //       return _variance<tc_decimal>(iDeltaDOF);
 
-        default:
-          return -1;
-      }
-    }
+    //     default:
+    //       return -1;
+    //   }
+    // }
 
-    template < typename tDataType >
-    tc_decimal _standardDeviation ( tc_int iDeltaDOF = 0 );
+    // tc_decimal _standardDeviation ( tc_int iDeltaDOF = 0 );
 
-    inline tc_decimal standardDeviation ( tc_int iDeltaDOF = 0 ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _standardDeviation<tc_byte>(iDeltaDOF);
+    // inline tc_decimal standardDeviation ( tc_int iDeltaDOF = 0 ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _standardDeviation<tc_byte>(iDeltaDOF);
 
-        case TC_INT:
-          return _standardDeviation<tc_int>(iDeltaDOF);
+    //     case TC_INT:
+    //       return _standardDeviation<tc_int>(iDeltaDOF);
 
-        case TC_DECIMAL:
-          return _standardDeviation<tc_decimal>(iDeltaDOF);
+    //     case TC_DECIMAL:
+    //       return _standardDeviation<tc_decimal>(iDeltaDOF);
 
-        default:
-          return -1;
-      }
-    }
+    //     default:
+    //       return -1;
+    //   }
+    // }
 
-    template < typename tDataType >
-    tc_decimal _range ( void );
+    // tc_decimal _range ( void );
 
-    inline tc_decimal range ( void ) {
-      switch ( getDataType() ) {
-        case TC_BYTE:
-          return _range<tc_byte>();
+    // inline tc_decimal range ( void ) {
+    //   switch ( getDataType() ) {
+    //     case TC_BYTE:
+    //       return _range<tc_byte>();
 
-        case TC_INT:
-          return _range<tc_int>();
+    //     case TC_INT:
+    //       return _range<tc_int>();
 
-        case TC_DECIMAL:
-          return _range<tc_decimal>();
+    //     case TC_DECIMAL:
+    //       return _range<tc_decimal>();
 
-        default:
-          return -1;
-      }
-    }
+    //     default:
+    //       return -1;
+    //   }
+    // }
 
     tc_bool arrayInitRandomUniformDist ( tc_int iLow, tc_int iHigh, tc_int iSeed = 0 );
     tc_bool arrayInitRandomUniformDist ( tc_decimal dLow, tc_decimal dHigh, tc_int iSeed = 0 );
@@ -326,6 +336,12 @@ class TeracadaArray {
     TeracadaArray *bitwiseXOR ( TeracadaArray *tcaA, TeracadaArray *tcaB, TeracadaArray *tcaC = nullptr );
 };
 
+template class TeracadaArray<tc_byte>;
+template class TeracadaArray<tc_int>;
+template class TeracadaArray<tc_decimal>;
+template class TeracadaArray<tc_char>;
+template class TeracadaArray<tc_str>;
+
 
 struct stdTeracadaArrayClass;
 typedef struct stdTeracadaArrayClass stdTeraArray;
@@ -333,11 +349,11 @@ typedef struct stdTeracadaArrayClass stdTeraArray;
 /* TeracadaArray C-API prefix: teraArray from now onwards (including pyapi) */
 
 EXTERN_C stdTeraArray* ta_arrayInit ( tc_int iDataType, tc_int iNumElements );
-EXTERN_C void ta_arrayDelete ( stdTeraArray* pstiTerracadaArray );
+EXTERN_C tc_void ta_arrayDelete ( stdTeraArray* pstiTerracadaArray );
 EXTERN_C tc_bool ta_isInitSuccess ( stdTeraArray* pstiTeracadaArray );
 
 EXTERN_C tc_int ta_getDataType ( stdTeraArray* pstiTeracadaArray );
-EXTERN_C void* ta_getArray ( stdTeraArray* pstiTeracadaArray );
+EXTERN_C tc_void* ta_getArray ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C tc_int ta_getNumElements ( stdTeraArray* pstiTeracadaArray );
 
 EXTERN_C tc_bool ta_insertByte ( stdTeraArray* pstiTeracadaArray, tc_byte b8Value, tc_int iPosition = 0, tc_bool bOverwrite = false );
@@ -350,13 +366,13 @@ EXTERN_C tc_bool ta_insertInts ( stdTeraArray* pstiTeracadaArray, const tc_int *
 EXTERN_C tc_bool ta_insertDecimals ( stdTeraArray* pstiTeracadaArray, const tc_decimal *pdValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
 EXTERN_C tc_bool ta_insertString ( stdTeraArray* pstiTeracadaArray, const tc_char *pcValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
 
-EXTERN_C void* ta_get ( stdTeraArray* pstiTeracadaArray, tc_int iPosition );
+EXTERN_C tc_void* ta_get ( stdTeraArray* pstiTeracadaArray, tc_int iPosition );
 
 EXTERN_C tc_int ta_getErrno ( stdTeraArray* pstiTeracadaArray );
-EXTERN_C tc_int ta_errnoReset ( stdTeraArray* pstiTeracadaArray );
-EXTERN_C tc_char* ta_getErrStr ( stdTeraArray* pstiTeracadaArray, tc_int iErrno = 0 );
+EXTERN_C tc_void ta_errnoReset ( stdTeraArray* pstiTeracadaArray );
+EXTERN_C tc_str ta_getErrStr ( stdTeraArray* pstiTeracadaArray, tc_int iErrno = 0 );
 
-EXTERN_C void ta_print ( stdTeraArray* pstiTeracadaArray );
+EXTERN_C tc_void ta_print ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C stdTeraArray* ta_printToBuff ( stdTeraArray* pstiTeracadaArray, stdTeraArray *pstiBuff = NULL );
 
 

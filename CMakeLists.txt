@@ -8,7 +8,7 @@ set(ENV{'CC'} 'g++')
 set(CMAKE_CXX_STANDARD 17)          # -std=c++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)       # turn-off gnu compiler extensions
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-unused-label -Wno-format")
+set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-label -Wno-format")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Setting project lib names
@@ -26,11 +26,11 @@ set(_SRCS_PYTHON_EXT
 # Setting sources
 set (_SRCS_TERACADA
   core/data_structures/teracada_array.cc
-  core/data_structures/teracada_array_capi.cc
-  core/data_structures/teracada_stats.cc
+  # core/data_structures/teracada_array_capi.cc
+  # core/data_structures/teracada_stats.cc
   core/data_structures/teracada_error.cc
-  core/regression/teracada_regression.cc
-  core/regression/teracada_regression_capi.cc
+  # core/regression/teracada_regression.cc
+  # core/regression/teracada_regression_capi.cc
 )
 
 # Setting unit tests
@@ -72,12 +72,12 @@ target_link_libraries(${_PROJECT_LIB64}_unit_tests PRIVATE ${_PROJECT_LIB64} ${_
 target_compile_definitions(${_PROJECT_LIB64}_unit_tests PRIVATE _TERACADA_DTYPE64=1)
 
 # Build Teracada-Python module
-add_custom_command(
-  TARGET ${_PROJECT_LIB64} POST_BUILD
-  COMMENT "Building Teracada-Python compiler extension module:"
-  WORKING_DIRECTORY ${_SRCS_PYTHON_EXT}
-  COMMAND bash -c "python3 setup.py build"
-)
+# add_custom_command(
+#   TARGET ${_PROJECT_LIB64} POST_BUILD
+#   COMMENT "Building Teracada-Python compiler extension module:"
+#   WORKING_DIRECTORY ${_SRCS_PYTHON_EXT}
+#   COMMAND bash -c "python3 setup.py build"
+# )
 
 # Set output directory in target properties
 set_target_properties( ${_PROJECT_LIB32} ${_PROJECT_LIB64} ${_PROJECT_LIB32}_unit_tests ${_PROJECT_LIB64}_unit_tests

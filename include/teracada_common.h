@@ -43,8 +43,9 @@
 
 typedef uint8_t tc_byte;
 typedef char    tc_char;
-typedef char    tc_str;
+typedef char*   tc_str;
 typedef bool    tc_bool;
+typedef void    tc_void;
 
 /* All Teracada generic data types (end) */
 

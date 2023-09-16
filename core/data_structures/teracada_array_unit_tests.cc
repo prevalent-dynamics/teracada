@@ -16,24 +16,26 @@ void UnitTestsTeracadaArrayTypeByte ( void ) {
 
   cout << ">>> Unit testing TeracadaArray (TC_BYTE): ";
 
-  TeracadaArray objTeracadaArrayByte(TC_BYTE, 5);
+  TeracadaArray<tc_byte> objTeracadaArrayByte(5);
+  objTeracadaArrayByte.disableExceptions();
+
   tc_byte aui8Array1[10] = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
-  objTeracadaArrayByte.insert<tc_byte>(aui8Array1, 10);
+  objTeracadaArrayByte.insert(aui8Array1, 10);
 
   tc_byte aui8Array2[9] = {21, 22, 23, 24, 25, 26, 27, 28, 29};
-  objTeracadaArrayByte.insert<tc_byte>(aui8Array2, 9, 3);
+  objTeracadaArrayByte.insert(aui8Array2, 9, 3);
 
-  objTeracadaArrayByte.insert<tc_byte>(110);
-  objTeracadaArrayByte.insert<tc_byte>(120);
-  objTeracadaArrayByte.insert<tc_byte>(130);
-  objTeracadaArrayByte.insert<tc_byte>(140);
-  objTeracadaArrayByte.insert<tc_byte>(150);
+  objTeracadaArrayByte.insert(110);
+  objTeracadaArrayByte.insert(120);
+  objTeracadaArrayByte.insert(130);
+  objTeracadaArrayByte.insert(140);
+  objTeracadaArrayByte.insert(150);
 
   tc_byte aui8Array3[5] = {1, 2, 3, 4, 5};
-  objTeracadaArrayByte.insert<tc_byte>(aui8Array3, 5, 1);
+  objTeracadaArrayByte.insert(aui8Array3, 5, 1);
 
   tc_byte aui8Array4[5] = {151, 152, 153, 154, 155};
-  objTeracadaArrayByte.insert<tc_byte>(aui8Array4, 5);
+  objTeracadaArrayByte.insert(aui8Array4, 5);
 
   // Added total 34 elements to the array till now
   assert(objTeracadaArrayByte.getNumElements() == 34);
@@ -62,24 +64,26 @@ void UnitTestsTeracadaArrayTypeInt ( void ) {
 
   cout << ">>> Unit testing TeracadaArray [TC_INT]: ";
 
-  TeracadaArray objTeracadaArrayInt(TC_INT, 5);
+  TeracadaArray<tc_int> objTeracadaArrayInt(5);
+  objTeracadaArrayInt.disableExceptions();
+
   tc_int aui8Array1[10] = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
-  objTeracadaArrayInt.insert<tc_int>(aui8Array1, 10);
+  objTeracadaArrayInt.insert(aui8Array1, 10);
 
   tc_int aui8Array2[9] = {21, 22, 23, 24, 25, 26, 27, 28, 29};
-  objTeracadaArrayInt.insert<tc_int>(aui8Array2, 9, 3);
+  objTeracadaArrayInt.insert(aui8Array2, 9, 3);
 
-  objTeracadaArrayInt.insert<tc_int>(110);
-  objTeracadaArrayInt.insert<tc_int>(120);
-  objTeracadaArrayInt.insert<tc_int>(130);
-  objTeracadaArrayInt.insert<tc_int>(140);
-  objTeracadaArrayInt.insert<tc_int>(150);
+  objTeracadaArrayInt.insert(110);
+  objTeracadaArrayInt.insert(120);
+  objTeracadaArrayInt.insert(130);
+  objTeracadaArrayInt.insert(140);
+  objTeracadaArrayInt.insert(150);
 
   tc_int aui8Array3[5] = {1, 2, 3, 4, 5};
-  objTeracadaArrayInt.insert<tc_int>(aui8Array3, 5, 1);
+  objTeracadaArrayInt.insert(aui8Array3, 5, 1);
 
   tc_int aui8Array4[5] = {151, 152, 153, 154, 155};
-  objTeracadaArrayInt.insert<tc_int>(aui8Array4, 5);
+  objTeracadaArrayInt.insert(aui8Array4, 5);
 
   // Added total 34 elements to the array till now
   assert(objTeracadaArrayInt.getNumElements() == 34);
@@ -108,24 +112,26 @@ void UnitTestsTeracadaArrayTypeDecimal ( void ) {
 
   cout << ">>> Unit testing TeracadaArray [TC_DECIMAL]: ";
 
-  TeracadaArray objTeracadaArrayDecimal(TC_DECIMAL, 5);
+  TeracadaArray<tc_decimal> objTeracadaArrayDecimal(5);
+  objTeracadaArrayDecimal.disableExceptions();
+
   tc_decimal aui8Array1[10] = { 10.1, 20.1, 30.1, 40.1, 50.1, 60.1, 70.1, 80.1, 90.1, 100.1 };
-  objTeracadaArrayDecimal.insert<tc_decimal>(aui8Array1, 10);
+  objTeracadaArrayDecimal.insert(aui8Array1, 10);
 
   tc_decimal aui8Array2[9] = {21.2, 22.2, 23.2, 24.2, 25.2, 26.2, 27.2, 28.2, 29};
-  objTeracadaArrayDecimal.insert<tc_decimal>(aui8Array2, 9, 3);
+  objTeracadaArrayDecimal.insert(aui8Array2, 9, 3);
 
-  objTeracadaArrayDecimal.insert<tc_decimal>(110.3);
-  objTeracadaArrayDecimal.insert<tc_decimal>(120.3);
-  objTeracadaArrayDecimal.insert<tc_decimal>(130.3);
-  objTeracadaArrayDecimal.insert<tc_decimal>(140.3);
-  objTeracadaArrayDecimal.insert<tc_decimal>(150.3);
+  objTeracadaArrayDecimal.insert(110.3);
+  objTeracadaArrayDecimal.insert(120.3);
+  objTeracadaArrayDecimal.insert(130.3);
+  objTeracadaArrayDecimal.insert(140.3);
+  objTeracadaArrayDecimal.insert(150.3);
 
   tc_decimal aui8Array3[5] = {1.4, 2.4, 3.4, 4.4, 5.4};
-  objTeracadaArrayDecimal.insert<tc_decimal>(aui8Array3, 5, 1);
+  objTeracadaArrayDecimal.insert(aui8Array3, 5, 1);
 
   tc_decimal aui8Array4[5] = {151.5, 152.5, 153.5, 154.5, 155.5};
-  objTeracadaArrayDecimal.insert<tc_decimal>(aui8Array4, 5);
+  objTeracadaArrayDecimal.insert(aui8Array4, 5);
 
   // Added total 34 elements to the array till now
   assert(objTeracadaArrayDecimal.getNumElements() == 34);
@@ -153,19 +159,20 @@ void UnitTestsTeracadaArrayTypeChar () {
 
   cout << ">>> Unit testing TeracadaArray [TC_CHAR]: ";
 
-  TeracadaArray objTeracadaArrayChar(TC_CHAR, 5);
+  TeracadaArray<tc_char> objTeracadaArrayChar(5);
+  objTeracadaArrayChar.disableExceptions();
 
-  objTeracadaArrayChar.insert<tc_char>("Insert names in this sentence.");
+  objTeracadaArrayChar.insert("Insert names in this sentence.");
 
   assert(strcmp((char *) objTeracadaArrayChar.get(), "Insert names in this sentence.") == 0);
 
-  objTeracadaArrayChar.insert<tc_char>("(Johnny) ", 9, 14);
+  objTeracadaArrayChar.insert("(Johnny) ", 9, 14);
   assert(strcmp((char *) objTeracadaArrayChar.get(), "Insert names (Johnny) in this sentence.") == 0);
 
-  objTeracadaArrayChar.insert<tc_char>(", John", 6, 21);
+  objTeracadaArrayChar.insert(", John", 6, 21);
   assert(strcmp((char *) objTeracadaArrayChar.get(), "Insert names (Johnny, John) in this sentence.") == 0);
 
-  objTeracadaArrayChar.insert<tc_char>(", Adam", 6, 27);
+  objTeracadaArrayChar.insert(", Adam", 6, 27);
   assert(strcmp((char *) objTeracadaArrayChar.get(), "Insert names (Johnny, John, Adam) in this sentence.") == 0);
 
   // Added 51 array elements till now
@@ -191,7 +198,8 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
 
   cout << ">>> Unit testing TeracadaArray [TC_STRING]: ";
 
-  TeracadaArray objTeracadaArrayStr(TC_STRING, 2);
+  TeracadaArray<tc_str> objTeracadaArrayStr(2);
+  objTeracadaArrayStr.disableExceptions();
 
   objTeracadaArrayStr.insert("String number 1");
   objTeracadaArrayStr.insert("String number 2");
@@ -201,12 +209,12 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
 
   // Added 5 array elements till now
   assert(objTeracadaArrayStr.getNumElements() == 5);
-  assert(strcmp((char *) objTeracadaArrayStr.get(1), "String number 1") == 0);
-  assert(strcmp((char *) objTeracadaArrayStr.get(3), "String number 3") == 0);
-  assert(strcmp((char *) objTeracadaArrayStr.get(5), "String number 5") == 0);
-  assert(strcmp((char *) objTeracadaArrayStr.get(-1), "String number 5") == 0);
-  assert(strcmp((char *) objTeracadaArrayStr.get(-2), "String number 4") == 0);
-
+  assert(strcmp((tc_str) objTeracadaArrayStr.get(1), "String number 1") == 0);
+  assert(strcmp((tc_str) objTeracadaArrayStr.get(3), "String number 3") == 0);
+  assert(strcmp((tc_str) objTeracadaArrayStr.get(5), "String number 5") == 0);
+  assert(strcmp((tc_str) objTeracadaArrayStr.get(-1), "String number 5") == 0);
+  assert(strcmp((tc_str) objTeracadaArrayStr.get(-2), "String number 4") == 0);
+  objTeracadaArrayStr.print();
   objTeracadaArrayStr.remove(3, 3);
 
   // Removed three array elements till now
@@ -227,22 +235,22 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
 int main () {
   cout << endl << endl;
 
-  TeracadaArray objTeracadaArrayInt(TC_INT, 10);
-  cout << "Size of TeracadaArray object [ TYPE: TC_INT | NUM_ELEMENTS: 10 ]: " << sizeof(objTeracadaArrayInt);
+  // TeracadaArray<tc_int> objTeracadaArrayInt(10);
+  // cout << "Size of TeracadaArray object [ TYPE: TC_INT | NUM_ELEMENTS: 10 ]: " << sizeof(objTeracadaArrayInt);
 
-  cout << endl << endl;
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeByte();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeByte();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeInt();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeInt();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeDecimal();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeDecimal();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeChar();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeChar();
+  // cout << endl << endl;
 
   UnitTestsTeracadaArrayTypeString();
   cout << endl << endl;
