@@ -27,7 +27,7 @@ class TeracadaArray {
     tc_void*          m_pvArray;
 
     // If Teracada array has been successfully initialized
-    tc_bool           m_iIsInitSuccess;
+    tc_bool           m_bIsInitSuccess;
 
     // Number of elements in the array (m_iArrayLastIndex + 1)
     tc_int            m_iMaxNumArrayElements;
@@ -41,6 +41,8 @@ class TeracadaArray {
     // The resize/padding algorithm to use
     tc_byte           m_b8ResizeAlgo;
     tc_byte           m_b8ResizePaddingAlgo;
+
+    tc_bool           m_bOverwrite;
 
     // Total number of reallocation attempts
     tc_int            m_uliTotalReallocAttempts;
@@ -64,11 +66,11 @@ class TeracadaArray {
     }
 
     tc_void setArrayInitSuccess () {
-      m_iIsInitSuccess = true;
+      m_bIsInitSuccess = true;
     }
 
     tc_void setArrayInitFailure () {
-      m_iIsInitSuccess = false;
+      m_bIsInitSuccess = false;
     }
 
     tc_int setMaxNumElements ( tc_int iMaxNumElements ) {
@@ -79,8 +81,6 @@ class TeracadaArray {
       m_uliTotalReallocAttempts ++;
     }
 
-    tc_bool setDataType ( tc_byte b8DataType );
-
     tc_bool setDataType ( void );
 
     tc_bool validateTypeSafety ( void );
@@ -88,7 +88,7 @@ class TeracadaArray {
     tc_int positionToIndex ( tc_int iPosition );
 
     tc_bool resize ( tc_int iNumElements = 0 );
-    tc_int resizeIfRequired ( tc_int iInsertIndex, tc_int uiNumElements, tc_bool overwrite);
+    tc_int resizeBeforeInsert ( tc_int iInsertIndex, tc_int uiNumElements );
 
     tc_bool _remove ( tc_int iPosition, tc_int uiNumElements );
 
@@ -108,7 +108,7 @@ class TeracadaArray {
     }
 
     tc_bool isInitSuccess ( void ) const {
-      return m_iIsInitSuccess;
+      return m_bIsInitSuccess;
     };
 
     tc_int getLastElementIndex ( void ) const {
@@ -165,6 +165,18 @@ class TeracadaArray {
       return (m_b8ResizePaddingAlgo = b8PaddingAlgo);
     }
 
+    tc_void enableOverwrite ( void ) {
+      m_bOverwrite = true;
+    }
+
+    tc_void disableOverwrite ( void ) {
+      m_bOverwrite = false;
+    }
+
+    tc_bool isOverwriteEnabled ( void ) const {
+      return m_bOverwrite;
+    }
+
     tc_int getTotalReallocAttempts ( void ) const {
       return m_uliTotalReallocAttempts;
     }
@@ -195,9 +207,25 @@ class TeracadaArray {
       return iIndex + 1;
     }
 
-    tc_bool insert ( tDataType tValue, tc_int iPosition = 0, tc_bool bOverwrite = false );
+    tc_bool insert ( tc_int iPosition, const tDataType tValue );
 
-    tc_bool insert ( tDataType* tValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
+    tc_bool insertBack ( const tDataType tValue ) {
+      return insert(0, tValue);
+    }
+
+    tc_bool insertFront ( const tDataType tValue ) {
+      return insert(1, tValue);
+    }
+
+    tc_bool insert ( tc_int iPosition, const tDataType* tValue, tc_int iLength = 0 );
+
+    tc_bool insertBack ( const tDataType* tValue, tc_int iLength = 0 ) {
+      return insert(0, tValue, iLength);
+    }
+
+    tc_bool insertFront ( const tDataType* tValue, tc_int iLength = 0 ) {
+      return insert(1, tValue, iLength);
+    }
 
     tc_bool remove ( tc_int iPosition = 0, tc_int uiNumElements = 1 );
 

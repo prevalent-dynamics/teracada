@@ -1,14 +1,22 @@
-// All function MUST make sure that whenever they ERREXIT,
-// - they should properly call throwException(ERR),
-// - either just before goto ERREXIT (all),
-// - or just in the ERREXIT label
-// - or both if it is better, as throwException will not overwrite previously set error
-// This step can only be skipped if it sure/known that throwException(ERR)
-// - has definitely been called by one of the previous function calls
+/*!
+  @file
+  @author Rishabh Soni (Prevalent Dynamics)
+
+  @brief
+    Implementation of TeracadaArray core functions
+  
+  @attention
+    All api functions MUST make sure that whenever they ERREXIT, they should properly call throwException(ERR),
+    either just before goto ERREXIT (all), or in the ERREXIT label or both if it is better,
+    as throwException will not overwrite previously set error. This step can only be skipped if it sure/known
+    that throwException(ERR) has definitely been called by one of the previous function calls.
+
+  @note
+    For both tc_str and tc_char*, strings must be null terminated, before passing to the api functions
+*/
 
 
 #include <iostream>
-#include <cerrno>
 #include <cstring>
 #include <fstream>
 #include <algorithm>
@@ -17,21 +25,57 @@
 #include "teracada_array.h"
 
 
+/*!
+  @brief
+    The class constructor.
+
+  @details
+    This is the default class constructor.
+    While creating the object, accepted data types are:
+    - tc_byte
+    - tc_int
+    - tc_decimal
+    - tc_char
+    - tc_str
+
+  @param[in]
+    iNumElements The number of array elements, the default is 100
+
+  @par Returns
+    None.
+
+  @note
+    The difference between tc_char and tc_str is that with tc_str, passed strings will be stored in a seperate char buffer and the pointer to that buffer will be stored in the main array object
+
+  @par Examples
+    @code{.cpp}
+    TeracadaArray<tc_byte> arrayObject(10);
+    TeracadaArray<tc_int> arrayObject(10);
+    TeracadaArray<tc_decimal> arrayObject(10);
+    TeracadaArray<tc_char> arrayObject(10);
+    TeracadaArray<tc_str> arrayObject(10);
+    @endcode
+
+  @par Errors/Exceptions
+    - ERR_TA_MEMALLOC_FAILED
+    - ERR_TA_INIT_FAILED
+*/
 template <typename tDataType>
 TeracadaArray<tDataType>::TeracadaArray ( tc_int iNumElements ) :
   m_b8DataType(TC_INT), // TC_INT is the default data type
   m_b8DataTypeSize(0),
   m_pvArray(nullptr),
-  m_iIsInitSuccess(false),
+  m_bIsInitSuccess(false),
   m_iMaxNumArrayElements(iNumElements),
   m_iArrayLastIndex(-1),
   m_b8ResizeAlgo(TA_RESIZE_ALGO_5PERCENT),
   m_b8ResizePaddingAlgo(TA_RESIZE_ALGO_STATIC10),
+  m_bOverwrite(false),
   m_uliTotalReallocAttempts(0),
   m_iErrno(0),
   m_bEnableExceptions(true)
 {
-  tc_void* pvPtrStartAddr = nullptr;
+  tc_void* pvBuff = nullptr;
 
   tc_char acDataTypeStr[6][12] = {
     "TC_BYTE", "TC_INT", "TC_DECIMAL",
@@ -55,18 +99,20 @@ TeracadaArray<tDataType>::TeracadaArray ( tc_int iNumElements ) :
 
   setElementSize(sizeof(tDataType));
 
-  setArray(calloc((getMaxNumElements() * getElementSize()), getElementSize()));
+  pvBuff = calloc((getMaxNumElements() * getElementSize()), getElementSize());
 
-  if ( ! getArray() ) {
+  if ( ! pvBuff ) {
     setArrayInitFailure();
     TC_LOG(LOG_ERR, "TeracadaArray::TeracadaArray(): Failed to allocate buffer for the array");
+    throwException(ERR_TA_MEMALLOC_FAILED);
     goto ERREXIT;
   }
 
+  setArray(pvBuff);
+  setArrayInitSuccess();
+
   EXIT:
     /* Log array start/end address and length */
-
-    pvPtrStartAddr = getArray();
 
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wpointer-arith"
@@ -74,12 +120,10 @@ TeracadaArray<tDataType>::TeracadaArray ( tc_int iNumElements ) :
     TC_LOG(LOG_INFO, "TeracadaArray::TeracadaArray(): Allocated buffer of length %d bytes for the array [ TYPE: %s | START_ADDR: %p | END_ADDR: %p ]",
             (getMaxNumElements() * getDataType()),
             acDataTypeStr[getDataType()],
-            pvPtrStartAddr,
-            ((pvPtrStartAddr - 1) + (getMaxNumElements() * getDataType())));
+            getArray(),
+            ((getArray() - 1) + (getMaxNumElements() * getDataType())));
 
     #pragma GCC diagnostic pop
-
-    setArrayInitSuccess();
 
     return;
 
@@ -117,43 +161,40 @@ TeracadaArray<tDataType>::~TeracadaArray ( void ) {
 }
 
 
-template <typename tDataType>
-tc_bool TeracadaArray<tDataType>::setDataType ( tc_byte b8DataType ) {
-  if ( b8DataType >= TC_BYTE && b8DataType <= TC_ARRAY ) {
-    m_b8DataType = b8DataType;
-    goto EXIT;
+/*!
+  @brief
+    Sets data type based on object initialization.
 
-  } else {
-    goto ERREXIT;
-  }
+  @details
+    Sets the value of member variable (m_b8DataType) based on object initialization.
 
-  EXIT:
-    return true;
+  @par Parameters
+    None.
 
-  ERREXIT:
-    TC_LOG(LOG_ERR, "TeracadaArray::setDataType(): Failed to set the array data type");
-    throwException(ERR_TA_INVALID_DATA_TYPE);
-    return false;
-}
+  @par Returns
+    true On sucess
+    false On failure
 
-
+  @par Errors/Exceptions
+    - ERR_TA_INVALID_DATA_TYPE
+*/
 template <typename tDataType>
 tc_bool TeracadaArray<tDataType>::setDataType ( void ) {
 
   if ( std::is_same<tDataType, tc_byte>::value )
-    setDataType(TC_BYTE);
+    m_b8DataType = TC_BYTE;
 
   else if ( std::is_same<tDataType, tc_int>::value )
-    setDataType(TC_INT);
+    m_b8DataType = TC_INT;
 
   else if ( std::is_same<tDataType, tc_decimal>::value )
-    setDataType(TC_DECIMAL);
+    m_b8DataType = TC_DECIMAL;
 
   else if ( std::is_same<tDataType, tc_char>::value )
-    setDataType(TC_CHAR);
+    m_b8DataType = TC_CHAR;
 
   else if ( std::is_same<tDataType, tc_char>::value || std::is_same<tDataType, tc_str>::value )
-    setDataType(TC_STRING);
+    m_b8DataType = TC_STRING;
 
   else {
     goto ERREXIT;
@@ -171,13 +212,17 @@ tc_bool TeracadaArray<tDataType>::setDataType ( void ) {
 
 /*!
   @brief
-    Validate the type safety of the template parameter
+    Validate the type safety of the template parameter.
+
   @details
-    The template parameter type should be according to the array data type
+    Validation check to make sure that the value of member variable (m_b8DataType) is according to the data type of object intialization.
+
   @par Parameters
     None.
+
   @retval
     true Type safety check passed
+
   @retval
     false Type safety check failed
 */
@@ -237,17 +282,28 @@ bool TeracadaArray<tDataType>::validateTypeSafety ( void ) {
 /*!
   @brief
     Convert array position value to array index value
+
   @details
-    - Position value 1 represents the first array element
-    - Position value 0 represents the index after the last array element
-    - Positive position values are counted from array start to array end (left-to-right)
-    - Negative position values are counted from array end to array start (right-to-left/reverse)
+    This function converts a position value to actual array index.
+    - Position value 1 represents the first array element.
+    - Position value 0 represents the index after the last array element.
+    - Positive position values are counted from array start to array end (left-to-right).
+    - Negative position values are counted from array end to array start (right-to-left/reverse).
+
   @param[in]
     iPosition The position value
+
   @retval
-    Index  The array index converted from the position
+    Index The array index converted from the position
+
   @retval
     -1 When there is an invalid poition value passed in the parameter
+
+  @note
+    This function doesn't perform validation to check if the passed position value actually exists in the main array
+
+  @par Errors/Exceptions
+    - ERR_TA_INVALID_POSITION_OR_INDEX
 */
 template <typename tDataType>
 tc_int TeracadaArray<tDataType>::positionToIndex ( tc_int iPosition ) {
@@ -284,20 +340,26 @@ tc_int TeracadaArray<tDataType>::positionToIndex ( tc_int iPosition ) {
 
 /*!
   @brief
-    Resize the array by reallocating the array buffer
+    Resize the main array by reallocating the array buffer
+
   @details
-    - Resize the array according to the value passed in the parameter iNumElements
-    - Add extra padding on the right, according to the value of m_b8ResizePaddingAlgo, when iNumElements != 0
-    - If iNumElements == 0, then resize according to the pre-defined resize algorithm (m_b8ResizeAlgo)
+    - Resize the array according to the value passed in the parameter iNumElements.
+    - Add extra padding on the right, according to the value of m_b8ResizePaddingAlgo, when iNumElements != 0.
+    - If iNumElements == 0 (no specific size requested), then resize according to the pre-defined resize algorithm (m_b8ResizeAlgo).
+
   @param[in]
-    iNumElements (tc_int): The total number of new elements to be accomodated after resize
+    iNumElements The total number of new elements to be accomodated after resize
+
   @retval
     true Successfully resized the array
+
   @retval
     false Failed to resize the array
+
   @note
-    Always pass minumum space required in the parameter iNumElements, let this function decide on the padding\n
-    This function is automatically called when needed during insertion, hence protected access specifier
+    - Always pass minumum space required in the parameter iNumElements, let this function decide on padding.
+    - This function is automatically called when needed during insertion, hence protected access specifier.
+
   @todo
     Shrink the array if iNumElements < 0
 */
@@ -307,9 +369,9 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
   tc_int iNewNumElements = 0;
   tc_int iPreNumElements = getMaxNumElements();
 
-  incrementTotalReallocAttempts();
+  /* Log total reallocation attempts to the designated file (even before validation checks) */
 
-  /* Log total reallocation attempts to the designated file */
+  incrementTotalReallocAttempts();
 
   std::ofstream objFd;
   objFd.open(TA_REALLOC_ATTEMPTS_DUMP_FPATH, std::ios::out | std::ios::trunc);
@@ -322,6 +384,7 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
 
   if ( iNumElements <= 0 ) {
     TC_LOG(LOG_ERR, "TeracadaArray::resize(): Invalid number of elements requested for resize [ NUM_ELEMENTS: %d ]", iNumElements);
+    throwException(ERR_TA_INVALID_PARAM);
     goto ERREXIT;
   }
 
@@ -330,7 +393,7 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
   if ( iNumElements ) {
     iNewNumElements = (iPreNumElements + iNumElements);
 
-    /* Decide on additional padding */
+    /** Decide on additional padding **/
 
     switch ( getResizePaddingAlgo() ) {
 
@@ -353,8 +416,11 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
 
     pvReallocArray = realloc(getArray(), (iNewNumElements * getElementSize()));
 
-    if ( ! pvReallocArray )
+    if ( ! pvReallocArray ) {
+      TC_LOG(LOG_ERR, "TeracadaArray::resize(): Failed to reallocate main array buffer [ SIZE: %d ]", (iNewNumElements * m_b8DataTypeSize));
+      throwException(ERR_TA_MEMALLOC_FAILED);
       goto ERREXIT;
+    }
 
     goto EXIT;
   }
@@ -363,7 +429,7 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
 
   switch ( getResizeAlgo() ) {
 
-    /* Decide on resize bounds */
+    /** Decide on resize bounds **/
 
     case TA_RESIZE_ALGO_5PERCENT:
       iNewNumElements = iPreNumElements + std::max<tc_int>(((iPreNumElements * 5) / 100), 1);
@@ -378,12 +444,16 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
       goto ERREXIT;
   }
 
-  pvReallocArray = realloc(m_pvArray, (iNewNumElements * m_b8DataTypeSize));
+  pvReallocArray = realloc(getArray(), (iNewNumElements * m_b8DataTypeSize));
 
-    if ( ! pvReallocArray )
-      goto ERREXIT;
+  if ( ! pvReallocArray ) {
+    TC_LOG(LOG_ERR, "TeracadaArray::resize(): Failed to reallocate main array buffer [ SIZE: %d ]", (iNewNumElements * m_b8DataTypeSize));
+    throwException(ERR_TA_MEMALLOC_FAILED);
+    goto ERREXIT;
+  }
 
   EXIT:
+    // Don't move setArray() out of EXIT label
     setArray(pvReallocArray);
     setMaxNumElements(iNewNumElements);
 
@@ -407,14 +477,45 @@ bool TeracadaArray<tDataType>::resize ( tc_int iNumElements ) {
 }
 
 
+/*!
+  @brief
+    Check if resizing of the main array is required.
+
+  @details
+    - Check if resizing of the main array is required before inserting new elements in the main array.
+    - Resizing is only done if all or any of the elements to be inserted in the main array requires first resizing of the main buffer.
+
+  @param[in]
+    iInsertIndex The main array start index for insertion
+
+  @param[in]
+    iNumElements The number of elements to be inserted, starting from iInsertIndex
+
+  @retval
+    NumElements The number of out of bound insertion elements for which resizing was performed
+
+  @retval
+    0 Resizing was not performed (was not required, the main array buffer had enough space)
+
+  @retval
+    -1 In case of an error
+
+  @note
+    - Always pass minumum space required in the parameter iNumElements, let this function decide on padding.
+    - This function is automatically called when needed during insertion, hence protected access specifier.
+
+  @todo
+    Shrink the array if iNumElements < 0
+*/
 template <typename tDataType>
-tc_int TeracadaArray<tDataType>::resizeIfRequired ( tc_int iInsertIndex, tc_int iNumElements, bool bOverwrite) {
+tc_int TeracadaArray<tDataType>::resizeBeforeInsert ( tc_int iInsertIndex, tc_int iNumElements ) {
   tc_int iResizeNumElements = 0;
   tc_byte b8NullTermByte = 0;
   tc_int iLastIndexPostInsert = 0;
 
   if ( iInsertIndex < 0 || iNumElements <= 0 ) {
-    TC_LOG(LOG_ERR, "TeracadaArray::resizeIfRequired(): Invalid function parameters [ INDEX: %d | NUM_ELEMENTS: %d ]", iInsertIndex, iNumElements);
+    TC_LOG(LOG_ERR, "TeracadaArray::resizeBeforeInsert(): Invalid function parameters [ INDEX: %d | NUM_ELEMENTS: %d ]", iInsertIndex, iNumElements);
+    throwException(ERR_TA_INVALID_POSITION_OR_INDEX);
     goto ERREXIT;
   }
 
@@ -424,7 +525,7 @@ tc_int TeracadaArray<tDataType>::resizeIfRequired ( tc_int iInsertIndex, tc_int 
   if ( getDataType() == TC_CHAR )
     b8NullTermByte = 1;
 
-  if ( bOverwrite || iInsertIndex > getLastElementIndex() ) {
+  if ( isOverwriteEnabled() || iInsertIndex > getLastElementIndex() ) {
     iLastIndexPostInsert = std::max((tc_int) ((iInsertIndex - 1) + iNumElements + b8NullTermByte), getLastElementIndex());
 
   } else {
@@ -442,32 +543,16 @@ tc_int TeracadaArray<tDataType>::resizeIfRequired ( tc_int iInsertIndex, tc_int 
     return iResizeNumElements;
 
   ERREXIT:
-    TC_LOG(LOG_ERR, "TeracadaArray::resizeIfRequired(): Failed while checking if resizing the array is required");
+    TC_LOG(LOG_ERR, "TeracadaArray::resizeBeforeInsert(): Failed while checking if resizing the array is required");
     throwException(ERR_TA_RESIZE_FAILED);
     return -1;
 }
 
 
-/*
-  Function: TeracadaArray::insert()
-    Insert "a single value" to the Teracada array
-  Params:
-    1. tValue: The "single" value
-    2. iPosition: (Default: 0)
-                  Position of insertion
-                  Position is converted to index using positionToIndex()
-                  Check positionToIndex() comments for further details
-  Returns: (Boolean)
-    1. True: If the value is inserted to the Teracada array successully
-    2. False: When the function fails to insert the value
-  Notes:
-    Null terminator byte for TC_CHAR array is not part of m_iArrayLastIndex
-  TODO:
-    (None)
-*/
 template <typename tDataType>
-bool TeracadaArray<tDataType>::insert ( tDataType tValue, tc_int iPosition, bool bOverwrite ) {
+bool TeracadaArray<tDataType>::insert ( tc_int iPosition, const tDataType tValue ) {
   tc_int iIndex = -1;
+  tDataType tValue2;
 
   if ( ! isInitSuccess() )
     goto ERREXIT;
@@ -478,43 +563,53 @@ bool TeracadaArray<tDataType>::insert ( tDataType tValue, tc_int iPosition, bool
     goto ERREXIT;
 
   // Resize the Teracada array if required
-  if ( resizeIfRequired(iIndex, 1, bOverwrite) < 0 )
+  if ( resizeBeforeInsert(iIndex, 1) < 0 )
     goto ERREXIT;
 
   if constexpr ( std::is_same_v<tDataType, tc_str> ) {
-    tc_int iLength = strlen((tc_str) tValue) + 1; // +1 for null terminator
-    if ( ! iLength )
+    tc_int iLength = strlen(tValue) + 1; // +1 for null terminator
+
+    if ( iLength <= 0 )
       goto ERREXIT;
 
-    tc_str pcBuff = (tc_str) calloc(iLength, sizeof(tc_str));
+    tc_str pcBuff = (tc_str) calloc(iLength, sizeof(tc_char));
+
+    if ( ! pcBuff ) {
+      throwException(ERR_TA_MEMALLOC_FAILED);
+      goto ERREXIT;
+    }
+
     TC_LOG(LOG_INFO, "TeracadaArray::insert(): Allocated buffer of length (%d) for the string [ START_ADDR: %p ]", iLength, pcBuff);
     snprintf(pcBuff, iLength, "%s", tValue);
-    tValue = pcBuff;
+    tValue2 = pcBuff;
+
+  } else {
+    tValue2 = tValue;
   }
 
 
   /* Insert the value to a index after the last array value */
 
   if ( iIndex > getLastElementIndex() ) {
-    *((tDataType *) m_pvArray + iIndex) = tValue;
+    *((tDataType *) m_pvArray + iIndex) = tValue2;
     setLastElementIndex(iIndex);
     goto EXIT;
   }
 
   /* Insert the value to a index that is between other array values */
 
-  if ( bOverwrite ) {
+  if ( isOverwriteEnabled() ) {
     if constexpr ( std::is_same_v<tDataType, tc_str> )
       free(*((tDataType *) m_pvArray + iIndex));
 
-    *((tDataType *) m_pvArray + iIndex) = tValue;
+    *((tDataType *) m_pvArray + iIndex) = tValue2;
 
   } else {
     for ( tc_int iIter = getLastElementIndex(); iIter >= iIndex; iIter-- ) {
       *((tDataType *) m_pvArray + iIter + 1) = *((tDataType *) m_pvArray + iIter);
     }
 
-    *((tDataType *) m_pvArray + iIndex) = tValue;
+    *((tDataType *) m_pvArray + iIndex) = tValue2;
     incrementLastElementIndexBy(1);
   }
 
@@ -538,27 +633,8 @@ bool TeracadaArray<tDataType>::insert ( tDataType tValue, tc_int iPosition, bool
 }
 
 
-/*
-  Function: TeracadaArray::insert()
-    Insert "a set of values" to the Teracada array
-  Params:
-    1. tValue: The "set of values" pointer
-    2. iPosition: (Default: 0)
-                  Position of insertion
-                  Position is converted to index using positionToIndex()
-                  Check positionToIndex() comments for further details
-    3. iLength: (Default: 0)
-                 Lenth/Size of the the set of values
-  Returns: (Boolean)
-    1. True: If the values are inserted to the Teracada array successully
-    2. False: When the function fails to insert the values
-  Notes:
-    Null terminator byte for TC_CHAR array is not part of m_iArrayLastIndex
-  TODO:
-    (None)
-*/
 template <typename tDataType>
-bool TeracadaArray<tDataType>::insert ( tDataType* tValue, tc_int iLength, tc_int iPosition, bool bOverwrite ) {
+bool TeracadaArray<tDataType>::insert ( tc_int iPosition, const tDataType* tValue, tc_int iLength ) {
 
   tc_int iIndex = -1;
 
@@ -579,12 +655,12 @@ bool TeracadaArray<tDataType>::insert ( tDataType* tValue, tc_int iLength, tc_in
 
   if ( iLength <= 0 ) {
     TC_LOG(LOG_ERR, "TeracadaArray::insert(): Invalid length value for the element list [ LENGTH: %d ]", iLength);
-    throwException(ERR_TA_RUNTIME);
+    throwException(ERR_TA_INVALID_PARAM);
     goto ERREXIT;
   }
 
   // Resize the array if required
-  if ( resizeIfRequired(iIndex, iLength, bOverwrite) < 0 )
+  if ( resizeBeforeInsert(iIndex, iLength) < 0 )
     goto ERREXIT;
 
   /* Insert the value to a index after the last array value */
@@ -597,7 +673,7 @@ bool TeracadaArray<tDataType>::insert ( tDataType* tValue, tc_int iLength, tc_in
 
   /* Insert the value to a index that is between other array values */
 
-  if ( bOverwrite ) {
+  if ( isOverwriteEnabled() ) {
     memcpy(((tDataType *) m_pvArray + iIndex), tValue, (iLength * sizeof(tDataType)));
 
   } else {
@@ -630,21 +706,6 @@ bool TeracadaArray<tDataType>::insert ( tDataType* tValue, tc_int iLength, tc_in
 }
 
 
-/*
-  Function: TeracadaArray::remove()
-    Main function implementing remove functionality
-  Params:
-    1. iPosition: Array element position to remove
-    2. iNumElements: (Default: 1)
-                      Number of array elements to remove from iPosition
-  Returns: (Boolean)
-    1. True: If the value(s) is removed successfully
-    2. False: When the function fails to remove the value(s)
-  Notes:
-    (None)
-  TODO:
-    (None)
-*/
 template <typename tDataType>
 bool TeracadaArray<tDataType>::remove ( tc_int iPosition, tc_int iNumElements ) {
   tc_int iIndex = -1;
@@ -789,8 +850,10 @@ tc_void TeracadaArray<tDataType>::print ( void ) {
 
   ptcaBuff->setResizePaddingAlgo(TA_RESIZE_ALGO_STATIC1000);
 
-  if ( printToBuff(ptcaBuff) )
-    printf("%s", (tc_str) ptcaBuff->getArray());
+  if ( printToBuff(ptcaBuff) ) {
+    printf("%s\n", (tc_str) ptcaBuff->getArray());
+    fflush(stdout);
+  }
 
   delete ptcaBuff;
 
@@ -821,14 +884,14 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
     }
   }
 
-  ptcaBuff->insert("array([ ");
+  ptcaBuff->insertBack("array([ ");
 
   switch ( getDataType() ) {
     case TC_BYTE:
       {
         for ( tc_int iIter = 1; iIter <= getNumElements(); iIter++ ) {
           snprintf(pcIntStr, sizeof(caIntStr), "%d ", *((tc_byte*) get(iIter)));
-          ptcaBuff->insert(pcIntStr);
+          ptcaBuff->insertBack(pcIntStr);
           memset(pcIntStr, 0, sizeof(caIntStr));
         }
       }
@@ -839,7 +902,7 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
       {
         for ( tc_int iIter = 1; iIter <= getNumElements(); iIter++ ) {
           snprintf(pcIntStr, sizeof(caIntStr), "%ld ", *((tc_int*) get(iIter)));
-          ptcaBuff->insert(pcIntStr);
+          ptcaBuff->insertBack(pcIntStr);
           memset(pcIntStr, 0, sizeof(caIntStr));
         }
       }
@@ -850,7 +913,7 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
       {
         for ( tc_int iIter = 1; iIter <= getNumElements(); iIter++ ) {
           snprintf(pcIntStr, sizeof(caIntStr), "%lf ", *((tc_decimal*) get(iIter)));
-          ptcaBuff->insert(pcIntStr);
+          ptcaBuff->insertBack(pcIntStr);
           memset(pcIntStr, 0, sizeof(caIntStr));
         }
       }
@@ -858,14 +921,14 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
       break;
 
     case TC_CHAR:
-      ptcaBuff->insert((tc_str) getArray());
+      ptcaBuff->insertBack((tc_str) getArray());
       break;
 
     case TC_STRING:
       {
         for ( tc_int iIter = 1; iIter <= getNumElements(); iIter++ ) {
-          ptcaBuff->insert((tc_str) get(iIter));
-          ptcaBuff->insert(",\n");
+          ptcaBuff->insertBack((tc_str) get(iIter));
+          ptcaBuff->insertBack(",\n");
         }
 
       }
@@ -877,7 +940,7 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
       goto ERREXIT;
   }
 
-  ptcaBuff->insert("])");
+  ptcaBuff->insertBack("])");
 
   EXIT:
     return ptcaBuff;
