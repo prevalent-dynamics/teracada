@@ -1,5 +1,5 @@
-#ifndef _TERACADA_ARRAY_ERROR_H
-#define _TERACADA_ARRAY_ERROR_H
+#ifndef _TERACADA_ERROR_H
+#define _TERACADA_ERROR_H
 
 #include <exception>
 

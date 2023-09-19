@@ -1,5 +1,5 @@
-#ifndef _RCORE_NUMC_ARRAY_H
-#define _RCORE_NUMC_ARRAY_H
+#ifndef _TERACADA_ARRAY_H
+#define _TERACADA_ARRAY_H
 
 #include <cstdint>
 
@@ -21,7 +21,6 @@ class TeracadaArray {
   private:
     // Teracada array data type
     tc_byte           m_b8DataType;
-    tc_byte           m_b8DataTypeSize;
 
     // Main array pointers
     tc_void*          m_pvArray;
@@ -54,11 +53,7 @@ class TeracadaArray {
 
   protected:
     tc_byte getElementSize ( void ) const {
-      return m_b8DataTypeSize;
-    }
-
-    tc_byte setElementSize ( tc_byte b8ArrayElementSize ) {
-      return ( m_b8DataTypeSize = b8ArrayElementSize );
+      return sizeof(tDataType);
     }
 
     tc_void* setArray ( tc_void* pvArrayAllocMemBlock) {
@@ -146,7 +141,7 @@ class TeracadaArray {
     }
 
     tc_int getArraySize ( void ) const {
-      return (m_iMaxNumArrayElements * m_b8DataTypeSize);
+      return (m_iMaxNumArrayElements * sizeof(tDataType));
     }
 
     tc_byte getResizeAlgo ( void ) const {
@@ -207,24 +202,24 @@ class TeracadaArray {
       return iIndex + 1;
     }
 
-    tc_bool insert ( tc_int iPosition, const tDataType tValue );
+    tc_bool insert ( tc_int iPosition, tDataType tValue );
 
-    tc_bool insertBack ( const tDataType tValue ) {
+    tc_bool insertBack ( tDataType tValue ) {
       return insert(0, tValue);
     }
 
-    tc_bool insertFront ( const tDataType tValue ) {
+    tc_bool insertFront ( tDataType tValue ) {
       return insert(1, tValue);
     }
 
-    tc_bool insert ( tc_int iPosition, const tDataType* tValue, tc_int iLength = 0 );
+    tc_bool insert ( tc_int iPosition, tDataType* ptValue, tc_int iLength = 0 );
 
-    tc_bool insertBack ( const tDataType* tValue, tc_int iLength = 0 ) {
-      return insert(0, tValue, iLength);
+    tc_bool insertBack ( tDataType* ptValue, tc_int iLength = 0 ) {
+      return insert(0, ptValue, iLength);
     }
 
-    tc_bool insertFront ( const tDataType* tValue, tc_int iLength = 0 ) {
-      return insert(1, tValue, iLength);
+    tc_bool insertFront ( tDataType* ptValue, tc_int iLength = 0 ) {
+      return insert(1, ptValue, iLength);
     }
 
     tc_bool remove ( tc_int iPosition = 0, tc_int uiNumElements = 1 );
@@ -369,6 +364,7 @@ template class TeracadaArray<tc_int>;
 template class TeracadaArray<tc_decimal>;
 template class TeracadaArray<tc_char>;
 template class TeracadaArray<tc_str>;
+template class TeracadaArray<tc_dict>;
 
 
 struct stdTeracadaArrayClass;
@@ -380,19 +376,19 @@ EXTERN_C stdTeraArray* ta_arrayInit ( tc_int iDataType, tc_int iNumElements );
 EXTERN_C tc_void ta_arrayDelete ( stdTeraArray* pstiTerracadaArray );
 EXTERN_C tc_bool ta_isInitSuccess ( stdTeraArray* pstiTeracadaArray );
 
-EXTERN_C tc_int ta_getDataType ( stdTeraArray* pstiTeracadaArray );
+EXTERN_C tc_byte ta_getDataType ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C tc_void* ta_getArray ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C tc_int ta_getNumElements ( stdTeraArray* pstiTeracadaArray );
 
-EXTERN_C tc_bool ta_insertByte ( stdTeraArray* pstiTeracadaArray, tc_byte b8Value, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertInt ( stdTeraArray* pstiTeracadaArray, tc_int iValue, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertDecimal ( stdTeraArray* pstiTeracadaArray, tc_decimal dValue, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertChar ( stdTeraArray* pstiTeracadaArray, tc_char cValue, tc_int iPosition = 0, tc_bool bOverwrite = false );
+EXTERN_C tc_bool ta_insertByte ( stdTeraArray* pstiTeracadaArray, tc_int iPosition, const tc_byte bValue );
+EXTERN_C tc_bool ta_insertInt ( stdTeraArray* pstiTeracadaArray, tc_int iPosition, const tc_int iValue );
+EXTERN_C tc_bool ta_insertDecimal ( stdTeraArray* pstiTeracadaArray, tc_int iPosition, const tc_decimal dValue );
+EXTERN_C tc_bool ta_insertChar ( stdTeraArray* pstiTeracadaArray, tc_int iPosition, const tc_char cValue );
 
-EXTERN_C tc_bool ta_insertBytes ( stdTeraArray* pstiTeracadaArray, const tc_byte* pb8Value, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertInts ( stdTeraArray* pstiTeracadaArray, const tc_int *piValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertDecimals ( stdTeraArray* pstiTeracadaArray, const tc_decimal *pdValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
-EXTERN_C tc_bool ta_insertString ( stdTeraArray* pstiTeracadaArray, const tc_char *pcValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
+
+// EXTERN_C tc_bool ta_insertInts ( stdTeraArray* pstiTeracadaArray, const tc_int *piValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
+// EXTERN_C tc_bool ta_insertDecimals ( stdTeraArray* pstiTeracadaArray, const tc_decimal *pdValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
+// EXTERN_C tc_bool ta_insertString ( stdTeraArray* pstiTeracadaArray, const tc_char *pcValue, tc_int iLength = 0, tc_int iPosition = 0, tc_bool bOverwrite = false );
 
 EXTERN_C tc_void* ta_get ( stdTeraArray* pstiTeracadaArray, tc_int iPosition );
 
@@ -403,5 +399,12 @@ EXTERN_C tc_str ta_getErrStr ( stdTeraArray* pstiTeracadaArray, tc_int iErrno = 
 EXTERN_C tc_void ta_print ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C stdTeraArray* ta_printToBuff ( stdTeraArray* pstiTeracadaArray, stdTeraArray *pstiBuff = NULL );
 
+
+typedef TeracadaArray<tc_byte>    tca_byte;
+typedef TeracadaArray<tc_int>     tca_int;
+typedef TeracadaArray<tc_decimal> tca_decimal;
+typedef TeracadaArray<tc_char>    tca_char;
+typedef TeracadaArray<tc_str>     tca_str;
+typedef TeracadaArray<tc_dict>    tca_dict;
 
 #endif

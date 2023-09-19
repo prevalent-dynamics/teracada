@@ -26,8 +26,9 @@ set(_SRCS_PYTHON_EXT
 # Setting sources
 set (_SRCS_TERACADA
   core/data_structures/teracada_array.cc
-  # core/data_structures/teracada_array_capi.cc
+  core/data_structures/teracada_array_capi.cc
   # core/data_structures/teracada_stats.cc
+  core/data_structures/teracada_dict.cc
   core/data_structures/teracada_error.cc
   # core/regression/teracada_regression.cc
   # core/regression/teracada_regression_capi.cc

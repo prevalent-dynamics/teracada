@@ -202,11 +202,18 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
   TeracadaArray<tc_str> objTeracadaArrayStr(2);
   objTeracadaArrayStr.disableExceptions();
 
-  objTeracadaArrayStr.insertBack("String number 1");
-  objTeracadaArrayStr.insertBack("String number 2");
-  objTeracadaArrayStr.insertBack("String number 3");
-  objTeracadaArrayStr.insertBack("String number 4");
-  objTeracadaArrayStr.insertBack("String number 5");
+  char acString1[100] = {0};
+  char acString2[100] = {0};
+  char acString3[100] = {0};
+  char acString4[100] = {0};
+  char acString5[100] = {0};
+
+
+  objTeracadaArrayStr.insertBack(strcpy(acString1, "String number 1"));
+  objTeracadaArrayStr.insertBack(strcpy(acString2, "String number 2"));
+  objTeracadaArrayStr.insertBack(strcpy(acString3, "String number 3"));
+  objTeracadaArrayStr.insertBack(strcpy(acString4, "String number 4"));
+  objTeracadaArrayStr.insertBack(strcpy(acString5, "String number 5"));
 
   // Added 5 array elements till now
   assert(objTeracadaArrayStr.getNumElements() == 5);
@@ -215,7 +222,7 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
   assert(strcmp((tc_str) objTeracadaArrayStr.get(5), "String number 5") == 0);
   assert(strcmp((tc_str) objTeracadaArrayStr.get(-1), "String number 5") == 0);
   assert(strcmp((tc_str) objTeracadaArrayStr.get(-2), "String number 4") == 0);
-  // objTeracadaArrayStr.print();
+
   objTeracadaArrayStr.remove(3, 3);
 
   // Removed three array elements till now
