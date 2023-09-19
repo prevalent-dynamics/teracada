@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['teracadaarray_0',['TeracadaArray',['../classTeracadaArray.html#ae12dbb7912f5166d3fc1c0a575adac4b',1,'TeracadaArray']]]
+  ['setdatatype_0',['setDataType',['../classTeracadaArray.html#a7afab04a83ab748bc5c33bef31d7adcf',1,'TeracadaArray']]]
 ];

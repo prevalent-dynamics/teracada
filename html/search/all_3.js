@@ -1,8 +1,5 @@
 var searchData=
 [
-  ['setdatatype_0',['setDataType',['../classTeracadaArray.html#a7afab04a83ab748bc5c33bef31d7adcf',1,'TeracadaArray']]],
-  ['stdlinearregression_1',['stdLinearRegression',['../structstdLinearRegression.html',1,'']]],
-  ['stdteraarraypyobj_2',['stdTeraArrayPyObj',['../structstdTeraArrayPyObj.html',1,'']]],
-  ['stdteralregpyobj_3',['stdTeraLRegPyObj',['../structstdTeraLRegPyObj.html',1,'']]],
-  ['stteragraphnode_4',['stTeraGraphNode',['../structstTeraGraphNode.html',1,'']]]
+  ['resize_0',['resize',['../classTeracadaArray.html#aa094ae2456f83866c3c9b1212862f19b',1,'TeracadaArray']]],
+  ['resizebeforeinsert_1',['resizeBeforeInsert',['../classTeracadaArray.html#a757802943c750e7e7e7c5a27e5b7edfd',1,'TeracadaArray']]]
 ];
