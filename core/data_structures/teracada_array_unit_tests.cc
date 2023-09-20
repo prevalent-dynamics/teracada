@@ -240,28 +240,42 @@ void UnitTestsTeracadaArrayTypeString ( void ) {
 }
 
 
+void unitTestsTeracadaDict ( void ) {
+  tc_dict ptcdNode = nullptr;
+  TeracadaDict objDict;
+
+  objDict.update<tc_str, tc_str>("key1", "value1");
+  objDict.update<tc_str, tc_str>("key2", "value2");
+  objDict.update<tc_str, tc_int>("key3", 5);
+
+  printf("\n\n\n %s: %d", "key3", *((tc_int*) objDict.get<tc_str>("key3")));
+}
+
+
 int main () {
   cout << endl << endl;
 
-  TeracadaArray<tc_int> objTeracadaArrayInt(10);
-  cout << "Size of TeracadaArray object [ TYPE: TC_INT | NUM_ELEMENTS: 10 ]: " << sizeof(objTeracadaArrayInt);
+  // TeracadaArray<tc_int> objTeracadaArrayInt(10);
+  // cout << "Size of TeracadaArray object [ TYPE: TC_INT | NUM_ELEMENTS: 10 ]: " << sizeof(objTeracadaArrayInt);
 
-  cout << endl << endl;
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeByte();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeByte();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeInt();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeInt();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeDecimal();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeDecimal();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeChar();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeChar();
+  // cout << endl << endl;
 
-  UnitTestsTeracadaArrayTypeString();
-  cout << endl << endl;
+  // UnitTestsTeracadaArrayTypeString();
+  // cout << endl << endl;
+
+  unitTestsTeracadaDict();
 
   return 0;
 }

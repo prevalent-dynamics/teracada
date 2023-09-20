@@ -62,11 +62,11 @@
 */
 template <typename tDataType>
 TeracadaArray<tDataType>::TeracadaArray ( tc_int iNumElements ) :
-  m_b8DataType(TC_INT), // TC_INT is the default data type
+  m_b8DataType(TC_NONE), // TC_INT is the default data type
   m_pvArray(nullptr),
   m_bIsInitSuccess(false),
   m_iMaxNumArrayElements(iNumElements),
-  m_iArrayLastIndex(-1),
+  m_iArrayLastIndex(TA_NONE_INDEX),
   m_b8ResizeAlgo(TA_RESIZE_ALGO_5PERCENT),
   m_b8ResizePaddingAlgo(TA_RESIZE_ALGO_STATIC10),
   m_bOverwrite(false),
@@ -76,19 +76,18 @@ TeracadaArray<tDataType>::TeracadaArray ( tc_int iNumElements ) :
 {
   tc_void* pvBuff = nullptr;
 
-  tc_char acDataTypeStr[6][12] = {
-    "TC_BYTE", "TC_INT", "TC_DECIMAL",
-    "TC_CHAR", "TC_STRING", "TC_ARRAY"
+  tc_char acDataTypeStr[8][12] = {
+    "TC_NONE", "TC_BYTE", "TC_INT", "TC_DECIMAL",
+    "TC_CHAR", "TC_STRING", "TC_ARRAY", "TC_DICT"
   };
-
-  TC_LOG(LOG_INFO, "TeracadaArray::TeracadaArray(): Initializing TeracadaArray [ DATA_TYPE: %s | NUM_ELEMENTS: %d ]",
-      acDataTypeStr[getDataType()], getMaxNumElements());
 
   if ( ! setDataType() ) {
     setArrayInitFailure();
     TC_LOG(LOG_ERR, "TeracadaArray::TeracadaArray(): Failed to set the array data type");
     goto ERREXIT;
   }
+
+  TC_LOG(LOG_INFO, "TeracadaArray::TeracadaArray(): Initializing TeracadaArray [ DATA_TYPE: %s | NUM_ELEMENTS: %d ]", acDataTypeStr[getDataType()], getMaxNumElements());
 
   if ( getMaxNumElements() <= 0 ) {
     setArrayInitFailure();
@@ -142,7 +141,7 @@ TeracadaArray<tDataType>::~TeracadaArray ( void ) {
 
 /*!
   @brief
-    Sets data type based on object initialization.
+    Sets data type based on template argument of object initialization.
 
   @details
     Sets the value of member variable (m_b8DataType) based on object initialization.
@@ -160,20 +159,23 @@ TeracadaArray<tDataType>::~TeracadaArray ( void ) {
 template <typename tDataType>
 tc_bool TeracadaArray<tDataType>::setDataType ( void ) {
 
-  if ( std::is_same<tDataType, tc_byte>::value )
+  if constexpr ( std::is_same<tDataType, tc_byte>::value )
     m_b8DataType = TC_BYTE;
 
-  else if ( std::is_same<tDataType, tc_int>::value )
+  else if constexpr ( std::is_same<tDataType, tc_int>::value )
     m_b8DataType = TC_INT;
 
-  else if ( std::is_same<tDataType, tc_decimal>::value )
+  else if constexpr ( std::is_same<tDataType, tc_decimal>::value )
     m_b8DataType = TC_DECIMAL;
 
-  else if ( std::is_same<tDataType, tc_char>::value )
+  else if constexpr ( std::is_same<tDataType, tc_char>::value )
     m_b8DataType = TC_CHAR;
 
-  else if ( std::is_same<tDataType, tc_char>::value || std::is_same<tDataType, tc_str>::value )
+  else if constexpr ( std::is_same<tDataType, tc_str>::value )
     m_b8DataType = TC_STRING;
+
+  else if constexpr ( std::is_same<tDataType, tc_dict>::value )
+    m_b8DataType = TC_DICT;
 
   else {
     goto ERREXIT;
@@ -217,7 +219,7 @@ tc_bool TeracadaArray<tDataType>::setDataType ( void ) {
 */
 template <typename tDataType>
 tc_int TeracadaArray<tDataType>::positionToIndex ( tc_int iPosition ) {
-  tc_int iIndex = -1;
+  tc_int iIndex = TA_NONE_INDEX;
 
   // Position value 0 represents index after the last array element
   if ( iPosition == 0 ) {
@@ -244,7 +246,7 @@ tc_int TeracadaArray<tDataType>::positionToIndex ( tc_int iPosition ) {
   ERREXIT:
     TC_LOG(LOG_ERR, "TeracadaArray::positionToIndex(): Failed to convert the poition value to a valid array index");
     throwException(ERR_TA_INVALID_POSITION_OR_INDEX);
-    return -1;
+    return TA_NONE_INDEX;
 }
 
 
@@ -476,14 +478,14 @@ tc_int TeracadaArray<tDataType>::resizeBeforeInsert ( tc_int iInsertIndex, tc_in
     tDataType The value to be inserted
 
   @retval
-    true Successfully inserted the value in the main array at the designated position
+    iPosition On success, the function returns the position (from start/left) of element insertion
 
   @retval
-    false Failed to insert the value in the array
+    -1 On failure
 */
 template <typename tDataType>
-bool TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType tValue ) {
-  tc_int iIndex = -1;
+tc_int TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType tValue ) {
+  tc_int iIndex = TA_NONE_INDEX;
 
   if ( ! isInitSuccess() )
     goto ERREXIT;
@@ -529,13 +531,18 @@ bool TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType tValue ) {
       // So we will not incrementLastElementIndexBy() here
     }
 
-    TC_LOG(LOG_INFO, "TeracadaArray::insert(): Array insertion operation success [ POSITION: %d ]", iPosition);
-    return true;
+    if constexpr ( std::is_same_v<tDataType, tc_str> ) {
+      TC_LOG(LOG_INFO, "TeracadaArray::insert(): Array insertion operation success [ POSITION: %d | VALUE: %s ]", iPosition, tValue);
+    } else {
+      TC_LOG(LOG_INFO, "TeracadaArray::insert(): Array insertion operation success [ POSITION: %d ]", iPosition);
+    }
+
+    return iIndex + 1;
 
   ERREXIT:
     TC_LOG(LOG_ERR, "TeracadaArray::insert(): Array insertion operation failure [ POSITION: %d ]", iPosition);
     throwException(ERR_TA_INSERTION_FAILURE);
-    return false;
+    return TA_NONE_INDEX;
 }
 
 
@@ -561,7 +568,7 @@ bool TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType tValue ) {
 template <typename tDataType>
 bool TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType* ptValue, tc_int iLength ) {
 
-  tc_int iIndex = -1;
+  tc_int iIndex = TA_NONE_INDEX;
 
   // Check if the Teracada array was successfully initialized
   if ( ! isInitSuccess() )
@@ -633,7 +640,7 @@ bool TeracadaArray<tDataType>::insert ( tc_int iPosition, tDataType* ptValue, tc
 
 template <typename tDataType>
 bool TeracadaArray<tDataType>::remove ( tc_int iPosition, tc_int iNumElements ) {
-  tc_int iIndex = -1;
+  tc_int iIndex = TA_NONE_INDEX;
 
   // Check if the Teracada array was successfully initialized
   if ( ! isInitSuccess() )
@@ -707,7 +714,7 @@ tc_bool TeracadaArray<tDataType>::reset ( void ) {
 */
 template <typename tDataType>
 tc_void* TeracadaArray<tDataType>::get ( tc_int iPosition ) {
-  tc_int iIndex = -1;
+  tc_int iIndex = TA_NONE_INDEX;
   tc_void* pvValue = nullptr;
 
   // Check if the Teracada array was successfully initialized
@@ -791,7 +798,7 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
 
   ptcaBuff->insertBack("array([ ");
 
-  if constexpr ( std::is_pointer_v<tDataType> ) {
+  if constexpr ( std::is_same_v<tDataType, tc_str> ) {
     if ( std::is_same_v<tDataType, tc_str> ) {
       for ( tc_int iIter = 1; iIter <= getNumElements(); iIter++ ) {
         ptcaBuff->insertBack((tDataType) get(iIter));
@@ -805,7 +812,7 @@ TeracadaArray<tc_char>* TeracadaArray<tDataType>::printToBuff ( TeracadaArray<tc
         snprintf(pcIntStr, sizeof(caIntStr), "%d ", *((tc_byte*) get(iIter)));
 
       if constexpr (std::is_same_v<tDataType, tc_int>)
-        snprintf(pcIntStr, sizeof(caIntStr), "%ld ", *((tc_byte*) get(iIter)));
+        snprintf(pcIntStr, sizeof(caIntStr), "%ld ", *((tc_int*) get(iIter)));
 
       if constexpr (std::is_same_v<tDataType, tc_decimal>)
         snprintf(pcIntStr, sizeof(caIntStr), "%lf ", *((tc_decimal*) get(iIter)));

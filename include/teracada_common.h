@@ -10,7 +10,6 @@
 
 #define EXTERN_C extern "C"
 
-
 typedef uint8_t  tc_byte;
 typedef int32_t  tc_int32;
 typedef int64_t  tc_int64;
@@ -42,14 +41,6 @@ typedef void     tc_void;
   #pragma message "TERACADA BUILD: _TERACADA_DECIMAL32 (_TERACADA_DTYPE32)"
   typedef tc_float tc_decimal;
 #endif 
-
-struct stdTeracadaDictNode {
-  tc_byte b8DataType;
-  tc_void* pvValue;
-  struct stdTeracadaDictNode* stiChild;
-};
-
-typedef struct stdTeracadaDictNode tc_dict;
 
 enum {
   TC_NONE,

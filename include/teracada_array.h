@@ -6,6 +6,8 @@
 #include "teracada_common.h"
 #include "teracada_error.h"
 
+#define TA_NONE_INDEX -1
+
 enum {
   TA_RESIZE_ALGO_5PERCENT,
   TA_RESIZE_ALGO_10PERCENT,
@@ -110,6 +112,10 @@ class TeracadaArray {
       return m_iArrayLastIndex;
     }
 
+    tc_int getLastElementPos ( void ) const {
+      return m_iArrayLastIndex + 1;
+    }
+
     tc_int setLastElementIndex ( tc_int iLastIndex ) {
       return (m_iArrayLastIndex = iLastIndex);
     }
@@ -202,13 +208,13 @@ class TeracadaArray {
       return iIndex + 1;
     }
 
-    tc_bool insert ( tc_int iPosition, tDataType tValue );
+    tc_int insert ( tc_int iPosition, tDataType tValue );
 
-    tc_bool insertBack ( tDataType tValue ) {
+    tc_int insertBack ( tDataType tValue ) {
       return insert(0, tValue);
     }
 
-    tc_bool insertFront ( tDataType tValue ) {
+    tc_int insertFront ( tDataType tValue ) {
       return insert(1, tValue);
     }
 
@@ -359,12 +365,29 @@ class TeracadaArray {
     TeracadaArray *bitwiseXOR ( TeracadaArray *tcaA, TeracadaArray *tcaB, TeracadaArray *tcaC = nullptr );
 };
 
+typedef struct stdTeracadaDictNode* tc_dict;
+
+struct stdTeracadaDictNode {
+  tc_byte   b8DataTypeKey;
+  tc_int    iArrayPosKey;
+  tc_byte   b8DataTypeVal;
+  tc_int    iArrayPosVal;
+  TeracadaArray<tc_dict>* ptcaNext;
+};
+
 template class TeracadaArray<tc_byte>;
 template class TeracadaArray<tc_int>;
 template class TeracadaArray<tc_decimal>;
 template class TeracadaArray<tc_char>;
 template class TeracadaArray<tc_str>;
 template class TeracadaArray<tc_dict>;
+
+typedef TeracadaArray<tc_byte>    tca_byte;
+typedef TeracadaArray<tc_int>     tca_int;
+typedef TeracadaArray<tc_decimal> tca_decimal;
+typedef TeracadaArray<tc_char>    tca_char;
+typedef TeracadaArray<tc_str>     tca_str;
+typedef TeracadaArray<tc_dict>    tca_dict;
 
 
 struct stdTeracadaArrayClass;
@@ -398,13 +421,5 @@ EXTERN_C tc_str ta_getErrStr ( stdTeraArray* pstiTeracadaArray, tc_int iErrno = 
 
 EXTERN_C tc_void ta_print ( stdTeraArray* pstiTeracadaArray );
 EXTERN_C stdTeraArray* ta_printToBuff ( stdTeraArray* pstiTeracadaArray, stdTeraArray *pstiBuff = NULL );
-
-
-typedef TeracadaArray<tc_byte>    tca_byte;
-typedef TeracadaArray<tc_int>     tca_int;
-typedef TeracadaArray<tc_decimal> tca_decimal;
-typedef TeracadaArray<tc_char>    tca_char;
-typedef TeracadaArray<tc_str>     tca_str;
-typedef TeracadaArray<tc_dict>    tca_dict;
 
 #endif
